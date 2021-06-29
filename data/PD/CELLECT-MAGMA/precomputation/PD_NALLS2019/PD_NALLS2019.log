@@ -1,0 +1,37 @@
+Welcome to MAGMA v1.09 (linux/s)
+Using flags:
+	--bfile /home/mdpo/Programs/CELLECT/data/magma/g1000_eur/g1000_eur
+	--gene-annot OUTPUT/CELLECT-MAGMA/precomputation/NCBI37_1kgp_up100kb_down100kb.genes.annot
+	--pval OUTPUT/CELLECT-MAGMA/precomputation/PD_NALLS2019.sumstats ncol=N use=SNP,PVAL
+	--out OUTPUT/CELLECT-MAGMA/precomputation/PD_NALLS2019/PD_NALLS2019
+
+Start time is 13:56:38, Sunday 07 Mar 2021
+
+Loading PLINK-format data...
+Reading file /home/mdpo/Programs/CELLECT/data/magma/g1000_eur/g1000_eur.fam... 503 individuals read
+Reading file /home/mdpo/Programs/CELLECT/data/magma/g1000_eur/g1000_eur.bim... 22665064 SNPs read
+Preparing file /home/mdpo/Programs/CELLECT/data/magma/g1000_eur/g1000_eur.bed... 
+
+Reading SNP synonyms from file /home/mdpo/Programs/CELLECT/data/magma/g1000_eur/g1000_eur.synonyms (auto-detected)
+	read 6016767 mapped synonyms from file, mapping to 3921040 SNPs in the data
+	WARNING: detected 133 synonymous SNP pairs in the data
+	         skipped all synonym entries involved, synonymous SNPs are kept in analysis
+	         writing list of detected synonyms in data to supplementary log file
+Reading SNP p-values from file OUTPUT/CELLECT-MAGMA/precomputation/PD_NALLS2019.sumstats... 
+	detected 8 variables in file
+	using variable: SNP (SNP id)
+	using variable: PVAL (p-value)
+	using variable: N (sample size; discarding SNPs with N < 50)
+	read 1137742 lines from file, containing valid SNP p-values for 1129533 SNPs in data (99.28% of lines, 4.984% of SNPs in data)
+Loading gene annotation from file OUTPUT/CELLECT-MAGMA/precomputation/NCBI37_1kgp_up100kb_down100kb.genes.annot... 
+	19429 gene definitions read from file
+	found 19169 genes containing valid SNPs in genotype data
+
+
+Starting gene analysis... 
+	using model: SNPwise-mean
+	writing gene analysis results to file OUTPUT/CELLECT-MAGMA/precomputation/PD_NALLS2019/PD_NALLS2019.genes.out
+	writing intermediate output to file OUTPUT/CELLECT-MAGMA/precomputation/PD_NALLS2019/PD_NALLS2019.genes.raw
+
+
+End time is 14:04:08, Sunday 07 Mar 2021 (elapsed: 00:07:30)

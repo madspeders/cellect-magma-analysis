@@ -260,9 +260,22 @@ ui <- navbarPage("CELLECT-MAGMA ANALYSIS",
                                                              textInput(inputId = "cellexPath",
                                                                        label = "Write path to CELLEX file:",
                                                                        placeholder = "Example: ~/CELLEX/outputFile.mu.csv.gz"),
+                                                             checkboxInput(inputId = "cellexUsePre",
+                                                                           label = markdown("Use pre-computed CELLEX values - [mouse brain dataset](https://doi.org/10.1016/j.cell.2018.06.021)"),
+                                                                           value = FALSE,
+                                                                           width = NULL),
+                                                             br(),
                                                              textInput(inputId = "cellectPath",
                                                                        label = "Write path to CELLECT output folder:",
                                                                        placeholder = "Example: ~/CELLECT/OUTPUT/CELLECT-MAGMA"),
+                                                             checkboxInput(inputId = "cellectUsePreSCZ",
+                                                                           label = markdown("Use pre-computed CELLECT results - [schizophrenia](https://doi.org/10.1101/2020.09.12.20192922)"),
+                                                                           value = FALSE,
+                                                                           width = NULL),
+                                                             checkboxInput(inputId = "cellectUsePrePD",
+                                                                           label = markdown("Use pre-computed CELLECT results - [Parkinson's disease](https://doi.org/10.1016/S1474-4422(19)30320-5)"),
+                                                                           value = FALSE,
+                                                                           width = NULL),
                                                              hr()
                                                          ),
                                                          div(id = "analysisParametersTopGenes",
@@ -530,7 +543,9 @@ ui <- navbarPage("CELLECT-MAGMA ANALYSIS",
                                                             )
                                                       ),
                                                       div(id = "notTableAndPlots",
-                                                          markdown("### Run analysis first to view output.")
+                                                          markdown("### Run analysis first to view output."),
+                                                          br(),
+                                                          markdown("**NB: If this if your first time using this application, please check out the \"Help\" pages.**")
                                                       ),
                                                       hidden(
                                                           div(id = "runningAnalysis",
@@ -556,6 +571,7 @@ server <- function(input, output, session) {
     analysisVals <- reactiveValues(prioritization_df = NULL,
                                    cellex_df = NULL,
                                    cellex_df_max = NULL,
+                                   cellect_path = NULL,
                                    heritability_df = NULL,
                                    heritability_df_new = NULL,
                                    genes_df = NULL,
@@ -588,6 +604,10 @@ server <- function(input, output, session) {
         shinyjs::toggle(id = "plottab6", condition = !is.null(analysisVals$gene_set))
         shinyjs::toggle(id = "plottab6.2", condition = !is.null(analysisVals$gene_set))
         shinyjs::toggle(id = "plottab6.3", condition = is.null(analysisVals$gene_set))
+        shinyjs::toggleState(id = "cellexPath", condition = !input$cellexUsePre)
+        shinyjs::toggleState(id = "cellectPath", condition = !(input$cellectUsePreSCZ | input$cellectUsePrePD))
+        shinyjs::toggleState(id = "cellectUsePreSCZ", condition = !input$cellectUsePrePD)
+        shinyjs::toggleState(id = "cellectUsePrePD", condition = !input$cellectUsePreSCZ)
     })
     
     shiny::observeEvent(input$resetAnalysis, {
@@ -600,6 +620,15 @@ server <- function(input, output, session) {
         shinyjs::reset("cellexPath")
         shinyjs::reset("cellectPath")
         shinyjs::reset("enableGeneSet")
+        shinyjs::reset("cellexUsePre")
+        shinyjs::reset("cellectUsePreSCZ")
+        shinyjs::reset("cellectUsePrePD")
+        shinyjs::reset("inputType")
+        shinyjs::reset("inputTypeHeader")
+        shinyjs::reset("inputTypeColumn")
+        shinyjs::reset("textInput")
+        shinyjs::reset("fileInput")
+        shinyjs::reset("geneFormat")
     })
     
     observeEvent(input$runAnalysis, {
@@ -607,9 +636,9 @@ server <- function(input, output, session) {
         shinyjs::hide(id = "tableAndPlots")
         shinyjs::show(id = "runningAnalysis")
         
-        n_genes <- 1000
-        magma_percentile_cutoff <- 0.9
-        n_cores <- 8
+        n_genes <- input$topGenesNumber #1000
+        magma_percentile_cutoff <- input$topGenesPercentile #0.9
+        #n_cores <- 8
         n_reps <- 1000 # 10000 or 1000
         adjust_method <- c("bonferroni", "fdr", "none")[3]
         
@@ -617,6 +646,26 @@ server <- function(input, output, session) {
         pal <- colorRampPalette(redcols)
         palcols <- pal(10)
         
+        # What CELLEX path to use.
+        if(input$cellexPath != "" | grepl("csv.gz$", input$cellexPath) | grepl("csv$", input$cellexPath) | input$cellexUsePre) {
+            if(input$cellexUsePre) {
+                analysisVals$cellex_df <- read_csv("./data/CELLEX/mousebrain-zeisel2018.mu.csv.gz")
+            } else {
+                analysisVals$cellex_df <- read_csv(input$cellexPath)
+            }
+        }
+
+        
+        # What CELLECT path to use.
+        if(input$cellectPath != "" | ("results" %in% dir(input$cellectPath)) | input$cellectUsePreSCZ | input$cellectUsePrePD) {
+            if(input$cellectUsePreSCZ) {
+                analysisVals$cellect_path <- "./data/SCZ/CELLECT-MAGMA/"
+            } else if(input$cellectUsePrePD) {
+                analysisVals$cellect_path <- "./data/PD/CELLECT-MAGMA/"
+            } else {
+                analysisVals$cellect_path <- input$cellectPath
+            }
+        }
         
         
         if(is.null(analysisVals$annotLookup)) {
@@ -683,10 +732,10 @@ server <- function(input, output, session) {
         }
         
         ### Prioritization data and enrichment / heritability data.
-        if(input$cellectPath != "" | ("results" %in% dir(input$cellectPath))) {
+        if(!is.null(analysisVals$cellect_path)) {
             
             # Load prioritization data.
-            prioritization_path <- paste0(input$cellectPath, "/results/prioritization.csv")
+            prioritization_path <- paste0(analysisVals$cellect_path, "/results/prioritization.csv")
             analysisVals$prioritization_df <- read_csv(prioritization_path)
             analysisVals$prioritization_df <- analysisVals$prioritization_df %>%
                 dplyr::rename(GWAS_DATASET = gwas, 
@@ -706,7 +755,7 @@ server <- function(input, output, session) {
             
             # Load heritability data.
             analysisVals$heritability_df <- lapply(X = analysisVals$sumstats_names, FUN = function(sumstats_name) {
-                heritability <- read_table2(paste0(input$cellectPath, "/precomputation/", sumstats_name, "/", sumstats_name, ".resid_correct_all.gsa.genes.out"), skip = 1)
+                heritability <- read_table2(paste0(analysisVals$cellect_path, "/precomputation/", sumstats_name, "/", sumstats_name, ".resid_correct_all.gsa.genes.out"), skip = 1)
                 heritability <- heritability %>% add_column(P = 1-pnorm(heritability$ZSTAT))
                 heritability <- heritability %>% arrange(P)
                 heritability <- heritability %>% add_column(gene_percentile = sort(1:nrow(heritability), decreasing = TRUE)/nrow(heritability))
@@ -886,14 +935,7 @@ server <- function(input, output, session) {
                                        legend.text=element_text(size=14)
                         )
                 }
-
                 
-                # if() {
-                #     df <- analysisVals$heritability_df %>% filter()
-                #     output_plot <- output_plot + 
-                # }
-                
-                #output_plot
             },
             # width = 1000,
             # height = 600
@@ -903,9 +945,7 @@ server <- function(input, output, session) {
         
         
         ### CELLEX data.
-        if(input$cellexPath != "" | grepl("csv.gz$", input$cellexPath) | grepl("csv$", input$cellexPath)) {
-            
-            analysisVals$cellex_df <- read_csv(input$cellexPath)
+        if(!is.null(analysisVals$cellex_df)) {
             
             output$tabletab3Variables <- renderUI({
                 selectInput("tab3Variables", "Variables:", choices = c("All", colnames(analysisVals$cellex_df)[-1]))
@@ -922,7 +962,7 @@ server <- function(input, output, session) {
             
         }
         
-        if((input$cellexPath != "" | grepl("csv.gz$", input$cellexPath) | grepl("csv$", input$cellexPath)) & (input$cellectPath != "" | ("results" %in% dir(input$cellectPath))) & (input$enableGeneSet & str_trim(input$textInput) != "") ) {
+        if(!is.null(analysisVals$cellex_df) & !is.null(analysisVals$cellect_path) & !is.null(analysisVals$annotLookup) & (input$enableGeneSet & str_trim(input$textInput) != "") ) {
             # Perform statistical significance tests (heritability).
             analysisVals$w_test <- wilcox.test(x = analysisVals$heritability_df_new %>% 
                                                    dplyr::filter(hgnc_symbol %in% unique(analysisVals$gene_set$hgnc_symbol)) %>%
@@ -1272,13 +1312,13 @@ server <- function(input, output, session) {
         
         
         ### Calculate the top genes. # Perhaps change the if statement to look for no NULL values in the output.
-        if(input$cellectPath != "" | ("precomputation" %in% dir(input$cellectPath)) & (input$cellexPath != "" | grepl("csv.gz$", input$cellexPath) | grepl("csv$", input$cellexPath))) {
-            sumstats_name <- str_subset(dir(paste0(input$cellectPath, "/precomputation/")), "sumstats")
+        if(!is.null(analysisVals$cellect_path) | ("precomputation" %in% dir(analysisVals$cellect_path)) & !is.null(analysisVals$cellex_df)) {
+            sumstats_name <- str_subset(dir(paste0(analysisVals$cellect_path, "/precomputation/")), "sumstats")
             sumstats_name <- substr(sumstats_name, start = 1, stop = nchar(sumstats_name) - 9)
             
             analysisVals$genes_output_df <- get_top_genes(analysisVals$heritability_df, analysisVals$cellex_df, analysisVals$annotLookup)
-            analysisVals$top_n_genes <- head(analysisVals$heritability_df$GENE, 1000) # n_genes instead of 1000
-            analysisVals$top_df <- analysisVals$genes_output_df %>% dplyr::filter(GENE %in% analysisVals$top_n_genes, CELLEX_PERCENTILE > 0.9)
+            analysisVals$top_n_genes <- head(analysisVals$heritability_df$GENE, n_genes) # n_genes instead of 1000
+            analysisVals$top_df <- analysisVals$genes_output_df %>% dplyr::filter(GENE %in% analysisVals$top_n_genes, CELLEX_PERCENTILE > magma_percentile_cutoff)
 
             # Insert an if statement here regarding if custom gene set is uploaded to the tool.
             output$tableTopGenes <- renderDataTable({
@@ -1288,7 +1328,7 @@ server <- function(input, output, session) {
         
         
         ### Create the big ESµ vs -log10(p-val) plot, using the top genes from earlier (also add option to display custom gene set).
-        if(input$cellectPath != "" | ("results" %in% dir(input$cellectPath)) & (input$cellexPath != "" | grepl("csv.gz$", input$cellexPath) | grepl("csv$", input$cellexPath))) {
+        if((!is.null(analysisVals$cellect_path) | ("results" %in% dir(analysisVals$cellect_path))) & !is.null(analysisVals$cellex_df)) {
             output$plotHeritabilitySpecificity <- renderPlot({
                 if(is.null(analysisVals$gene_set)) {
                     ggplot2::ggplot(data = analysisVals$genes_output_df %>%
