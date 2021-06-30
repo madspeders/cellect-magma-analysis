@@ -567,13 +567,16 @@ ui <- navbarPage("CELLECT-MAGMA ANALYSIS",
                                  column(width = 10, offset = 1, align = "justify",
                                         includeMarkdown("./help/page2.md")
                                         )
-                                 
                                  ),
                         tabPanel("Running the web application (parameters)",
-                                 #includeMarkdown("./help/page3.md")
+                                 column(width = 10, offset = 1, align = "justify",
+                                        includeMarkdown("./help/page3.md")
+                                        )
                                  ),
                         tabPanel("Explanation of figures and tables",
-                                 #includeMarkdown("./help/page4.md")
+                                 column(width = 10, offset = 1, align = "justify",
+                                        includeMarkdown("./help/page4.md")
+                                        )
                                  )
                     )
 )
