@@ -12,6 +12,7 @@ packages <- c("shiny",
               "shinyjs",
               "shinydashboard",
               "shinyFiles",
+              "markdown",
               "DT",
               "tidyverse",
               "ggplot2",
@@ -29,6 +30,7 @@ library(shiny)
 library(shinyjs)
 library(shinydashboard)
 library(shinyFiles)
+library(markdown)
 library(DT)
 library(tidyverse)
 library(ggplot2)
@@ -90,8 +92,8 @@ get_top_genes <- function(genes_df, cellex_df, annotLookup) {
 }
 
 
-# Manhatten plot function.
-manhatten.plot <- function(genes_df, annotLookup, gene_set = NULL, og_genes_df = FALSE, correction_method = c("bonferroni", "fdr", "none")[1], sig_thres = 0.05, return_just_genes_df = FALSE) {
+# Manhattan plot function.
+Manhattan.plot <- function(genes_df, annotLookup, gene_set = NULL, og_genes_df = FALSE, correction_method = c("bonferroni", "fdr", "none")[1], sig_thres = 0.05, return_just_genes_df = FALSE) {
     
     if(correction_method == "bonferroni") {
         
@@ -259,14 +261,14 @@ ui <- navbarPage("CELLECT-MAGMA ANALYSIS",
                                                              h3("File paths"),
                                                              textInput(inputId = "cellexPath",
                                                                        label = "Write path to CELLEX file:",
-                                                                       placeholder = "Example: ~/CELLEX/outputFile.mu.csv.gz"),
+                                                                       placeholder = "Example: ~/CELLEX/mydataset.esmu.csv.gz"),
                                                              checkboxInput(inputId = "cellexUsePre",
                                                                            label = markdown("Use pre-computed CELLEX values - [mouse brain dataset](https://doi.org/10.1016/j.cell.2018.06.021)"),
                                                                            value = FALSE,
                                                                            width = NULL),
                                                              br(),
                                                              textInput(inputId = "cellectPath",
-                                                                       label = "Write path to CELLECT output folder:",
+                                                                       label = "Write path to CELLECT-MAGMA output folder:",
                                                                        placeholder = "Example: ~/CELLECT/OUTPUT/CELLECT-MAGMA"),
                                                              checkboxInput(inputId = "cellectUsePreSCZ",
                                                                            label = markdown("Use pre-computed CELLECT results - [schizophrenia](https://doi.org/10.1101/2020.09.12.20192922)"),
@@ -344,7 +346,7 @@ ui <- navbarPage("CELLECT-MAGMA ANALYSIS",
                                                       hidden(
                                                           div(id = "tablesAndPlots",
                                                               tabsetPanel(
-                                                                  tabPanel(title = "Plot 1 - Manhatten Plot of Genes",
+                                                                  tabPanel(title = "Plot 1 - Manhattan Plot of Genes",
                                                                            br(),
                                                                            br(),
                                                                            fluidRow(column(3,
@@ -369,7 +371,7 @@ ui <- navbarPage("CELLECT-MAGMA ANALYSIS",
                                                                            div(id = "plottab3",
                                                                                fluidRow(
                                                                                    column(width = 12,
-                                                                                          plotOutput("plotManhatten",
+                                                                                          plotOutput("plotManhattan",
                                                                                                      height = 600,
                                                                                                      click = "plot1_click",
                                                                                                      brush = brushOpts(
@@ -556,9 +558,23 @@ ui <- navbarPage("CELLECT-MAGMA ANALYSIS",
                  )
              ),
              navbarMenu("Help",
-                        tabPanel("Getting the required input"),
-                        tabPanel("Running the web application"),
-                        tabPanel("Explanation of figures and tables")
+                        tabPanel("What is app for?",
+                                 column(width = 10, offset = 1, align = "justify",
+                                        includeMarkdown("./help/page1.md")
+                                        )
+                                 ),
+                        tabPanel("Getting the required input",
+                                 column(width = 10, offset = 1, align = "justify",
+                                        includeMarkdown("./help/page2.md")
+                                        )
+                                 
+                                 ),
+                        tabPanel("Running the web application (parameters)",
+                                 #includeMarkdown("./help/page3.md")
+                                 ),
+                        tabPanel("Explanation of figures and tables",
+                                 #includeMarkdown("./help/page4.md")
+                                 )
                     )
 )
 
@@ -821,12 +837,12 @@ server <- function(input, output, session) {
             # height = 600
             )
             
-            # Create Manhatten plot.
-            output$plotManhatten <- renderPlot({
+            # Create Manhattan plot.
+            output$plotManhattan <- renderPlot({
                 if(is.null(analysisVals$gene_set)) {
-                    manhatten.plot(analysisVals$heritability_df_new %>% dplyr::select(-P_adjust), analysisVals$annotLookup, correction_method = input$plottab3.correct, sig_thres = input$plottab3.num, og_genes_df = FALSE)
+                    Manhattan.plot(analysisVals$heritability_df_new %>% dplyr::select(-P_adjust), analysisVals$annotLookup, correction_method = input$plottab3.correct, sig_thres = input$plottab3.num, og_genes_df = FALSE)
                 } else if(!is.null(analysisVals$gene_set)) {
-                    manhatten.plot(analysisVals$heritability_df_new %>% dplyr::select(-P_adjust), analysisVals$annotLookup, unique(analysisVals$gene_set$hgnc_symbol), correction_method = input$plottab3.correct, sig_thres = input$plottab3.num, og_genes_df = FALSE)
+                    Manhattan.plot(analysisVals$heritability_df_new %>% dplyr::select(-P_adjust), analysisVals$annotLookup, unique(analysisVals$gene_set$hgnc_symbol), correction_method = input$plottab3.correct, sig_thres = input$plottab3.num, og_genes_df = FALSE)
                 }
                 
             },
@@ -836,7 +852,7 @@ server <- function(input, output, session) {
             
             output$brush_info_1 <- renderPrint({
                 if(is.null(analysisVals$gene_set)) {
-                    brushedPoints(manhatten.plot(analysisVals$heritability_df_new, 
+                    brushedPoints(Manhattan.plot(analysisVals$heritability_df_new, 
                                                  analysisVals$annotLookup,
                                                  correction_method = input$plottab3.correct,
                                                  sig_thres = input$plottab3.num,
@@ -849,7 +865,7 @@ server <- function(input, output, session) {
                                       dplyr::arrange(P), 
                                   input$plot1_brush)
                 } else if(!is.null(analysisVals$gene_set)) {
-                    brushedPoints(manhatten.plot(analysisVals$heritability_df_new, 
+                    brushedPoints(Manhattan.plot(analysisVals$heritability_df_new, 
                                                  analysisVals$annotLookup, 
                                                  unique(analysisVals$gene_set$hgnc_symbol),
                                                  correction_method = input$plottab3.correct,
