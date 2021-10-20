@@ -33,3 +33,12 @@ The first time you're running this, R will automatically download the required p
 - [**Shinyapps.io**](https://www.shinyapps.io/): Easy deployment in a few minutes, easily shareable with others, and with free tiers available, however limited in terms of scaling.
 - [**Shiny Server**](https://www.rstudio.com/products/shiny/shiny-server/): Open source, however requires you to use your own server for hosting.
 - [**RStudio Connect**](https://www.rstudio.com/products/connect/): Easy deployment, easily shareable with others, good for collaboration, and supports other programming languages and database systems, however is pricy and mostly intended for organizations.
+
+## Disclaimer
+The application is still very much a prototype, and if you try to run the analysis without providing the proper input, it will likely freeze up.  
+In any case, if the application locks up, try to refresh the page or restart application.
+
+## Credits
+The tool makes use of ESµ values from the CELLEX tool, as well as output from the CELLECT tool:
+- **GitHub:** https://github.com/perslab/CELLEX & https://github.com/perslab/CELLECT
+- **Journal article (P. N. Timshel, J. J. Thompson, and T. H. Pers):** https://elifesciences.org/articles/55851
