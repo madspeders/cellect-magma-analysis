@@ -24,7 +24,7 @@ Then, install the _biomaRt_ package: `BiocManager::install("biomaRt")`
 ### Running the Application Locally
 To run the application locally, you just need to run the following command:  
 ```R
-runGitHub("cellect-magma-analysis", "Mporse")
+runGitHub("cellect-magma-analysis", "madspeders")
 ```
 The first time you're running this, R will automatically download the required packages used by the application (except for the _biomaRt_ package, since it is part of Bioconductor - see the **Prerequisites** part above for more info).
 
